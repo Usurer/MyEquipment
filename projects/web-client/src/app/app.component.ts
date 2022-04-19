@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { initializeApp } from "firebase/app";
 import { getDatabase, set, ref } from 'firebase/database';
+import { GoogleAuthProvider, getAuth, signInWithPopup, signOut } from 'firebase/auth';
 
 @Component({
   selector: 'app-root',
@@ -10,6 +11,7 @@ import { getDatabase, set, ref } from 'firebase/database';
 export class AppComponent {
   title = 'WebClient';
   firebaseName: string = '';
+  userName?: string = undefined;
 
   constructor() {
 
@@ -36,5 +38,43 @@ export class AppComponent {
     set(ref(db, 'users/' + 'test_user_id'), {
       username: 'Bob',
     });
+
+
+  }
+
+  signIn(): void {
+    const authProvider = new GoogleAuthProvider();
+    authProvider.addScope('https://www.googleapis.com/auth/userinfo.email');
+    authProvider.addScope('https://www.googleapis.com/auth/userinfo.profile');
+
+    const auth = getAuth();
+    signInWithPopup(auth, authProvider)
+      .then((result) => {
+        // This gives you a Google Access Token. You can use it to access the Google API.
+        const credential = GoogleAuthProvider.credentialFromResult(result);
+        if (!credential) {
+          throw new Error('credential is null');
+        }
+
+        const token = credential.accessToken;
+        // The signed-in user info.
+        const user = result.user;
+        this.userName = user.displayName || user.email || undefined;
+        // ...
+      }).catch((error) => {
+        // Handle Errors here.
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        // The email of the user's account used.
+        const email = error.email;
+        // The AuthCredential type that was used.
+        const credential = GoogleAuthProvider.credentialFromError(error);
+        // ...
+      });
+  }
+
+  signOut(): void {
+    const auth = getAuth();
+    signOut(auth).then(() => this.userName = undefined);
   }
 }
